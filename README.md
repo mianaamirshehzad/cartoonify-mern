@@ -1,12 +1,13 @@
 ## Cartoonify (MERN)
 
-Full‑stack MERN app that uploads a photo, applies a **filter-based cartoon effect** on the backend (no paid AI APIs), saves the PNG result, stores metadata in MongoDB, and returns a URL for preview + download.
+Full‑stack MERN app that uploads a photo, transforms it into a high-quality cartoon using **LightX AI Cartoon Generator API**, saves the result, stores metadata in MongoDB, and returns a URL for preview + download.
 
 ### What you get
 
 - **Frontend (React + hooks)**: clean UI, upload preview, validation, loading state, error handling, result preview, download button
-- **Backend (Node + Express)**: multipart upload, filter-based image processing (Jimp), filesystem storage, MongoDB metadata, rate limiting + basic security
-- **Database (MongoDB)**: stores metadata and generated PNG URLs
+- **Backend (Node + Express)**: multipart upload, LightX AI Cartoon Generator API integration, filesystem storage, MongoDB metadata, rate limiting + basic security
+- **Database (MongoDB)**: stores metadata and generated cartoon image URLs
+- **AI Integration**: Uses LightX AI Cartoon Generator API v2 for high-quality cartoon transformations
 - **Deploy-ready**: configurable via environment variables
 
 ---
@@ -78,6 +79,7 @@ See `server/.env.example`. Key ones:
 - **`PUBLIC_BASE_URL`**: base URL used to build returned PNG URLs (set this to your hosted API domain in production)
 - **`CORS_ORIGIN`**: allowed origins (React dev URL, WordPress domain)
 - **`MAX_FILE_SIZE_BYTES`**: backend file size limit
+- **`LIGHTX_API_KEY`**: Your LightX API key (required) - Get it from [LightX API](https://api.lightxeditor.com)
 
 ### Client (`client/.env`)
 
@@ -123,16 +125,23 @@ Example response:
 
 ---
 
-## Image processing approach (filter-based, no AI API)
+## AI Cartoon Generation (LightX API)
 
-Backend applies:
+The backend uses LightX AI Cartoon Generator API v2 to transform images into high-quality cartoons:
 
-- **Smoothing**: blur
-- **Color reduction**: posterize
-- **Edge detection**: convolution kernel + threshold
-- **Blend**: multiply edges over reduced-color base
+1. **Image Upload**: Uploads the image to LightX using their Image Upload API
+2. **Cartoon Generation**: Calls the AI Cartoon Generator API to create a stylized cartoon version
+3. **Result Storage**: Downloads and saves the generated cartoon image locally
 
-Implementation: `server/src/services/cartoonService.js`.
+**Requirements:**
+- Minimum image size: 512x512 pixels
+- Maximum file size: 5 MB
+- Supported formats: JPEG, PNG
+- Each generation costs 1 credit (free trial includes 25 credits)
+
+**Implementation**: `server/src/services/lightxService.js`
+
+**Note**: You must set the `LIGHTX_API_KEY` environment variable for the API to work.
 
 ---
 

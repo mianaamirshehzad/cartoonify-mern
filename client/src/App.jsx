@@ -51,7 +51,7 @@ export default function App() {
     <div className="page">
       <header className="header">
         <h1>Cartoonify</h1>
-        <p>Upload an image and download a cartoon-style PNG (filter-based processing, no AI API).</p>
+        <p>Upload an image and transform it into a high-quality cartoon using LightX AI Cartoon Generator API.</p>
       </header>
 
       <main className="grid">

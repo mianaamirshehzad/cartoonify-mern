@@ -42,7 +42,10 @@ const env = {
 env.uploadAbsDir = path.resolve(__dirname, '..', '..', env.uploadDir);
 env.processedAbsDir = path.resolve(__dirname, '..', '..', env.processedDir);
 
-env.rateLimitWindowMs = toInt(process.env.RATE_LIMIT_WINDOW_MS, 60_000);
-env.rateLimitMax = toInt(process.env.RATE_LIMIT_MAX, 30);
+  env.rateLimitWindowMs = toInt(process.env.RATE_LIMIT_WINDOW_MS, 60_000);
+  env.rateLimitMax = toInt(process.env.RATE_LIMIT_MAX, 30);
+
+  // LightX API configuration
+  env.lightxApiKey = requireEnv('LIGHTX_API_KEY', null);
 
 module.exports = { env };
