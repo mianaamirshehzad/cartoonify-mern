@@ -1,0 +1,21 @@
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.local
+
+# Builds
+client/dist
+
+# Uploads/output (keep dirs via .gitkeep)
+server/uploads/*
+server/processed/*
+!server/uploads/.gitkeep
+!server/processed/.gitkeep
+
+# OS
+.DS_Store

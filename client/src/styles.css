@@ -1,0 +1,152 @@
+:root {
+  --bg: #0b1220;
+  --card: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.70);
+  --error: #ff6b6b;
+  --accent: #6ee7ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  background: radial-gradient(1200px 700px at 20% 10%, rgba(110,231,255,0.18), transparent 60%),
+              radial-gradient(900px 600px at 80% 20%, rgba(167,139,250,0.18), transparent 55%),
+              var(--bg);
+  color: var(--text);
+}
+
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 28px 16px 40px;
+}
+
+.header h1 {
+  margin: 0 0 6px;
+  letter-spacing: 0.3px;
+}
+
+.header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+@media (min-width: 900px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.fileLabel {
+  display: grid;
+  gap: 8px;
+}
+
+.fileLabel input {
+  width: 100%;
+}
+
+.preview {
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: rgba(0,0,0,0.25);
+}
+
+.caption {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.placeholder {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+}
+
+.btn {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 1px solid rgba(110, 231, 255, 0.35);
+  background: rgba(110, 231, 255, 0.16);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover { background: rgba(110, 231, 255, 0.22); }
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn.secondary {
+  width: auto;
+  text-decoration: none;
+  padding: 10px 14px;
+}
+
+.error {
+  margin-top: 10px;
+  color: var(--error);
+}
+
+.actions {
+  margin-top: 12px;
+}
+
+.meta {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.footer {
+  margin-top: 16px;
+  color: var(--muted);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
