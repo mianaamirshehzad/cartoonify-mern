@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Cloudinary } from '@cloudinary/url-gen';
 import { AdvancedImage } from '@cloudinary/react';
@@ -9,6 +9,8 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:505
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
 
 export default function CartoonMaker() {
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [publicId, setPublicId] = useState('');
   const [cartoonUrl, setCartoonUrl] = useState('');
@@ -19,9 +21,27 @@ export default function CartoonMaker() {
     return new Cloudinary({ cloud: { cloudName: CLOUD_NAME } });
   }, []);
 
-  async function handleUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl('');
+      return undefined;
+    }
+
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  function onFileChange(e) {
+    const next = e.target.files?.[0] || null;
+    setFile(next);
+    setError('');
+    setPublicId('');
+    setCartoonUrl('');
+  }
+
+  async function startCartoonify() {
+    if (!file || loading) return;
 
     setError('');
     setPublicId('');
@@ -29,8 +49,10 @@ export default function CartoonMaker() {
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
+
+    setLoading(true);
+
     reader.onloadend = async () => {
-      setLoading(true);
       try {
         const { data } = await axios.post(
           `${API_BASE_URL}/api/cartoonify`,
@@ -51,6 +73,11 @@ export default function CartoonMaker() {
         setLoading(false);
       }
     };
+
+    reader.onerror = () => {
+      setLoading(false);
+      setError('Could not read the selected file.');
+    };
   }
 
   const myImage = useMemo(() => {
@@ -59,40 +86,96 @@ export default function CartoonMaker() {
     return cld.image(publicId).effect(cartoonify().lineStrength(40).colorReduction(70));
   }, [cld, publicId]);
 
+  function downloadResult() {
+    if (!cartoonUrl) return;
+    const a = document.createElement('a');
+    a.href = cartoonUrl;
+    a.download = 'converted-image';
+    a.rel = 'noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   return (
     <div className="page">
       <header className="header">
-        <h1>Cartoonify</h1>
-        <p>Upload an image and transform it into a cartoon using Cloudinary.</p>
+        <h1>iFoodie Cartoonify</h1>
+        <p>Upload an image and transform it into cartoonish style using iFoodie</p>
       </header>
 
       <main className="grid">
         <section className="card">
-          <h2>1) Upload</h2>
-          <label className="fileLabel">
-            <span>Choose an image</span>
-            <input type="file" onChange={handleUpload} accept="image/*" />
-          </label>
+          <h2>Upload</h2>
+          <div className="cardContent">
+            <div className="cardTopSlot">
+              <label className="fileLabel">
+                <span>Choose an image</span>
+                <input type="file" onChange={onFileChange} accept="image/*" />
+              </label>
+            </div>
 
-          {loading ? <div className="placeholder">Processing cartoon…</div> : null}
-          {error ? <div className="error">{error}</div> : null}
+            {previewUrl ? (
+              <div className="preview">
+                <div className="caption">Selected image</div>
+                <div className="imageFrame">
+                  <img className="frameImg" src={previewUrl} alt="Selected preview" />
+                </div>
+              </div>
+            ) : (
+              <div className="placeholder big">No image selected.</div>
+            )}
+
+            {error ? <div className="error">{error}</div> : null}
+          </div>
+
+          <div className="cardActions">
+            <button className="btn" type="button" disabled={!file || loading} onClick={startCartoonify}>
+              {loading ? 'Converting…' : 'Convert'}
+            </button>
+          </div>
         </section>
 
-        <section className="card">
-          <h2>2) Result</h2>
-          {myImage ? (
-            <div className="preview">
-              <div className="caption">Cartoon</div>
-              <AdvancedImage cldImg={myImage} style={{ maxWidth: '100%' }} />
+        <section className="card resultCard">
+          <h2>Result</h2>
+          <div className="cardContent">
+            <div className="cardTopSlot">
+              <div className="fileLabel">
+                <span>Results will appear here</span>
+                <div className="topSlotSpacer" aria-hidden="true" />
+              </div>
             </div>
-          ) : cartoonUrl ? (
-            <div className="preview">
-              <div className="caption">Cartoon</div>
-              <img src={cartoonUrl} alt="Cartoon result" style={{ maxWidth: '100%' }} />
-            </div>
-          ) : (
-            <div className="placeholder">No result yet.</div>
-          )}
+
+            {loading || myImage || cartoonUrl ? (
+              <div className="preview">
+                <div className="caption">Converted image</div>
+                <div className="imageFrame">
+                  {loading ? (
+                    <div className="framePlaceholder">
+                      <div style={{ display: 'grid', gap: 10, justifyItems: 'center' }}>
+                        <div className="spinner" />
+                        <div>Processing…</div>
+                      </div>
+                    </div>
+                  ) : myImage ? (
+                    <AdvancedImage cldImg={myImage} className="frameImg" />
+                  ) : (
+                    <img className="frameImg" src={cartoonUrl} alt="Converted image" />
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="placeholder big">
+                No result yet.
+              </div>
+            )}
+          </div>
+
+          <div className="cardActions">
+            <button className="btn" type="button" disabled={!cartoonUrl || loading} onClick={downloadResult}>
+              Download
+            </button>
+          </div>
         </section>
       </main>
     </div>

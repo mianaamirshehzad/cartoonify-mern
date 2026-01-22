@@ -52,6 +52,8 @@ body {
   border-radius: 14px;
   padding: 16px;
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
 }
 
 .card h2 {
@@ -59,6 +61,14 @@ body {
   font-size: 16px;
   color: var(--muted);
   font-weight: 600;
+}
+
+.cardContent {
+  flex: 1;
+}
+
+.cardActions {
+  margin-top: auto;
 }
 
 .fileLabel {
@@ -70,6 +80,18 @@ body {
   width: 100%;
 }
 
+/* Keep Upload + Result aligned by reserving equal top-slot height in both cards */
+.cardTopSlot {
+  min-height: 60px; /* ~ span + gap + input height */
+}
+
+/* Invisible spacer that keeps layout aligned without adding visible UI */
+.topSlotSpacer {
+  height: 32px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .preview {
   margin-top: 12px;
   border-radius: 12px;
@@ -77,11 +99,49 @@ body {
   overflow: hidden;
 }
 
-.preview img {
+.compareRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .compareRow { grid-template-columns: 1fr 1fr; }
+}
+
+.imageFrame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: rgba(0,0,0,0.25);
+}
+
+.frameImg {
   display: block;
   width: 100%;
-  height: auto;
-  background: rgba(0,0,0,0.25);
+  height: 100%;
+  object-fit: contain;
+}
+
+.framePlaceholder {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 16px;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: rgba(110, 231, 255, 0.9);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .caption {
@@ -97,6 +157,14 @@ body {
   border-radius: 12px;
   border: 1px dashed var(--border);
   color: var(--muted);
+}
+
+.placeholder.big {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  text-align: center;
 }
 
 .btn {
