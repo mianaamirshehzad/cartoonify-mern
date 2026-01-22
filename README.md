@@ -1,13 +1,13 @@
 ## Cartoonify (MERN)
 
-Full‑stack MERN app that uploads a photo, transforms it into a high-quality cartoon using **LightX AI Cartoon Generator API**, saves the result, stores metadata in MongoDB, and returns a URL for preview + download.
+Full‑stack MERN app that uploads a photo and transforms it into a cartoon using **Cloudinary** (cartoonify effect). Optionally stores metadata in MongoDB and returns a URL for preview + download.
 
 ### What you get
 
 - **Frontend (React + hooks)**: clean UI, upload preview, validation, loading state, error handling, result preview, download button
-- **Backend (Node + Express)**: multipart upload, LightX AI Cartoon Generator API integration, filesystem storage, MongoDB metadata, rate limiting + basic security
+- **Backend (Node + Express)**: upload + Cloudinary transformation, MongoDB metadata (optional), rate limiting + basic security
 - **Database (MongoDB)**: stores metadata and generated cartoon image URLs
-- **AI Integration**: Uses LightX AI Cartoon Generator API v2 for high-quality cartoon transformations
+- **Image transformation**: Uses Cloudinary `e_cartoonify` effect for the cartoon look
 - **Deploy-ready**: configurable via environment variables
 
 ---
@@ -47,7 +47,7 @@ docker compose up -d
 
 ```bash
 cd server
-cp .env.example .env
+# create server/.env (copy from server/env.template) and add Cloudinary credentials
 npm install
 npm run dev
 ```
@@ -60,7 +60,7 @@ In a new terminal:
 
 ```bash
 cd client
-cp .env.example .env
+# create client/.env (copy from client/env.template)
 npm install
 npm run dev
 ```
@@ -79,13 +79,14 @@ See `server/.env.example`. Key ones:
 - **`PUBLIC_BASE_URL`**: base URL used to build returned PNG URLs (set this to your hosted API domain in production)
 - **`CORS_ORIGIN`**: allowed origins (React dev URL, WordPress domain)
 - **`MAX_FILE_SIZE_BYTES`**: backend file size limit
-- **`LIGHTX_API_KEY`**: Your LightX API key (required) - Get it from [LightX API](https://api.lightxeditor.com)
+- **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, **`CLOUDINARY_API_SECRET`**: your Cloudinary credentials (required)
 
 ### Client (`client/.env`)
 
 See `client/.env.example`:
 
 - **`VITE_API_BASE_URL`**: your backend API base URL
+- **`VITE_CLOUDINARY_CLOUD_NAME`**: your Cloudinary cloud name (used by the Cloudinary React SDK to render transformations)
 
 ---
 
@@ -100,8 +101,14 @@ See `client/.env.example`:
 - `POST /api/images/cartoonize`
   - Content-Type: `multipart/form-data`
   - Field name: `image`
-  - Validates type + size (frontend and backend)
-  - Produces a PNG and returns its URL
+  - Uploads to Cloudinary and returns the result URL (kept for back-compat)
+
+### Cartoonify (base64 or URL)
+
+- `POST /api/cartoonify`
+  - Content-Type: `application/json`
+  - Body: `{ "imagePath": "<base64 data URI or remote URL>" }`
+  - Returns `{ success, cartoonUrl, publicId }`
 
 Example cURL:
 
@@ -109,13 +116,13 @@ Example cURL:
 curl -F "image=@/path/to/photo.jpg" http://localhost:5050/api/images/cartoonize
 ```
 
-Example response:
+Example response (cartoonify):
 
 ```json
 {
-  "imageId": "65a...",
-  "pngUrl": "http://localhost:5050/static/processed/cartoon-...png",
-  "originalName": "photo.jpg"
+  "success": true,
+  "cartoonUrl": "https://res.cloudinary.com/.../image/upload/...jpg",
+  "publicId": "cartoon_app/abc123"
 }
 ```
 
@@ -125,23 +132,9 @@ Example response:
 
 ---
 
-## AI Cartoon Generation (LightX API)
+## Cartoon Generation (Cloudinary)
 
-The backend uses LightX AI Cartoon Generator API v2 to transform images into high-quality cartoons:
-
-1. **Image Upload**: Uploads the image to LightX using their Image Upload API
-2. **Cartoon Generation**: Calls the AI Cartoon Generator API to create a stylized cartoon version
-3. **Result Storage**: Downloads and saves the generated cartoon image locally
-
-**Requirements:**
-- Minimum image size: 512x512 pixels
-- Maximum file size: 5 MB
-- Supported formats: JPEG, PNG
-- Each generation costs 1 credit (free trial includes 25 credits)
-
-**Implementation**: `server/src/services/lightxService.js`
-
-**Note**: You must set the `LIGHTX_API_KEY` environment variable for the API to work.
+The backend uploads your image to Cloudinary and applies `e_cartoonify:<line_strength>:<color_reduction>` plus `q_auto` and `f_auto`.
 
 ---
 

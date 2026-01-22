@@ -3,13 +3,19 @@ const mongoose = require('mongoose');
 const ImageSchema = new mongoose.Schema(
   {
     originalName: { type: String, required: true },
-    originalPath: { type: String, required: true },
+    originalPath: { type: String },
     mimetype: { type: String, required: true },
     sizeBytes: { type: Number, required: true },
 
-    processedName: { type: String, required: true },
-    processedPath: { type: String, required: true },
-    processedUrl: { type: String, required: true }
+    // Legacy filesystem fields (optional now that Cloudinary is used)
+    processedName: { type: String },
+    processedPath: { type: String },
+
+    // Result URL (can be local /static/processed/... or Cloudinary secure_url)
+    processedUrl: { type: String },
+
+    // Cloudinary metadata
+    cloudinaryPublicId: { type: String }
   },
   { timestamps: true }
 );

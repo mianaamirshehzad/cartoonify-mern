@@ -2,7 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const Image = require('../models/Image');
 const { env } = require('../config/env');
-const { cartoonizeWithLightX } = require('../services/lightxService');
+const { uploadImage, buildCartoonUrl } = require('../services/cloudinaryService');
+const { logger } = require('../utils/logger');
+const { extractCloudinaryError } = require('../utils/cloudinaryError');
 
 function buildProcessedUrl(processedName) {
   // served via app: /static/processed -> <server>/processed
@@ -17,50 +19,34 @@ async function cartoonizeUpload(req, res) {
     return res.status(400).json({ error: 'No file received.' });
   }
 
-  // Check if API key is configured
-  if (!env.lightxApiKey) {
-    return res.status(500).json({ 
-      error: 'LightX API key not configured. Please set LIGHTX_API_KEY environment variable.' 
-    });
-  }
-
-  // Validate image size (minimum 512x512 as per LightX requirements)
-  // We'll let LightX handle this validation, but we can add a basic check here
+  // Basic sanity check (avoid empty files)
   const stats = fs.statSync(file.path);
   if (stats.size < 1024) {
-    return res.status(400).json({ error: 'Image file is too small. Minimum size is 512x512 pixels.' });
+    return res.status(400).json({ error: 'Image file is too small.' });
   }
 
-  // Extract optional parameters from request body or query
-  const textPrompt = req.body?.textPrompt || req.query?.textPrompt || null;
-  const styleImageUrl = req.body?.styleImageUrl || req.query?.styleImageUrl || null;
-
   try {
-    const { outName, outPath, cartoonUrl } = await cartoonizeWithLightX(
-      file.path,
-      env.processedAbsDir,
-      file.mimetype,
-      textPrompt,
-      styleImageUrl
-    );
+    const uploaded = await uploadImage(file.path);
+    const cartoonUrl = buildCartoonUrl(uploaded.public_id, { lineStrength: 30, colorReduction: 60 });
 
     const payload = {
-      pngUrl: buildProcessedUrl(outName),
+      // Back-compat: old client expects `pngUrl`
+      pngUrl: cartoonUrl,
+      cartoonUrl,
+      publicId: uploaded.public_id,
       originalName: file.originalname,
-      lightxCartoonUrl: cartoonUrl // Also return the original LightX URL
+      provider: 'cloudinary'
     };
 
-    // Persist metadata if MongoDB is available; otherwise still return the PNG URL for local testing.
+    // Persist metadata if MongoDB is available; otherwise still return the URL for local testing.
     try {
       const doc = await Image.create({
         originalName: file.originalname,
         originalPath: path.relative(path.resolve(__dirname, '..', '..'), file.path),
         mimetype: file.mimetype,
         sizeBytes: file.size,
-
-        processedName: outName,
-        processedPath: path.relative(path.resolve(__dirname, '..', '..'), outPath),
-        processedUrl: payload.pngUrl
+        processedUrl: payload.pngUrl,
+        cloudinaryPublicId: uploaded.public_id
       });
 
       payload.imageId = doc._id;
@@ -70,21 +56,27 @@ async function cartoonizeUpload(req, res) {
 
     return res.status(201).json(payload);
   } catch (error) {
-    // Handle LightX API errors
-    console.error('LightX API error:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    
-    // In development, include more details
+    logger.error('image.cartoonize_failed', {
+      requestId: req.id,
+      method: req.method,
+      path: req.originalUrl,
+      file: file
+        ? { originalName: file.originalname, mimetype: file.mimetype, sizeBytes: file.size }
+        : null,
+      cloudinary: extractCloudinaryError(error),
+      err: error
+    });
+
     const errorResponse = {
-      error: error.message || 'Failed to generate cartoon. Please check your API key and try again.'
+      error: error.message || 'Failed to generate cartoon. Please check your Cloudinary configuration and try again.'
     };
     
     if (process.env.NODE_ENV !== 'production') {
       errorResponse.details = error.stack;
       errorResponse.fullError = error.toString();
     }
-    
+    errorResponse.requestId = req.id;
+
     return res.status(500).json(errorResponse);
   }
 }

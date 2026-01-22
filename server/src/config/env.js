@@ -36,16 +36,18 @@ const env = {
 
   // Stored relative to server/ (project root for the API)
   uploadDir: requireEnv('UPLOAD_DIR', 'uploads'),
-  processedDir: requireEnv('PROCESSED_DIR', 'processed')
+  processedDir: requireEnv('PROCESSED_DIR', 'processed'),
+
+  // Cloudinary (cartoonify)
+  cloudinaryCloudName: requireEnv('CLOUDINARY_CLOUD_NAME', null),
+  cloudinaryApiKey: requireEnv('CLOUDINARY_API_KEY', null),
+  cloudinaryApiSecret: requireEnv('CLOUDINARY_API_SECRET', null)
 };
 
 env.uploadAbsDir = path.resolve(__dirname, '..', '..', env.uploadDir);
 env.processedAbsDir = path.resolve(__dirname, '..', '..', env.processedDir);
 
-  env.rateLimitWindowMs = toInt(process.env.RATE_LIMIT_WINDOW_MS, 60_000);
-  env.rateLimitMax = toInt(process.env.RATE_LIMIT_MAX, 30);
-
-  // LightX API configuration
-  env.lightxApiKey = requireEnv('LIGHTX_API_KEY', null);
+env.rateLimitWindowMs = toInt(process.env.RATE_LIMIT_WINDOW_MS, 60_000);
+env.rateLimitMax = toInt(process.env.RATE_LIMIT_MAX, 30);
 
 module.exports = { env };

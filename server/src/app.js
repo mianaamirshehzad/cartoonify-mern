@@ -7,8 +7,10 @@ const path = require('path');
 const { env } = require('./config/env');
 const { apiRateLimiter } = require('./middlewares/rateLimiter');
 const { errorHandler } = require('./middlewares/errorHandler');
+const { requestContext } = require('./middlewares/requestContext');
 
 const imageRoutes = require('./routes/imageRoutes');
+const cartoonRoutes = require('./routes/cartoonRoutes');
 
 const app = express();
 
@@ -22,8 +24,12 @@ app.use(
 );
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
+// Attach a request id for easier correlation in logs
+app.use(requestContext);
+
 // JSON is mostly for non-upload routes
-app.use(express.json({ limit: '1mb' }));
+// Base64 images can be large; keep this reasonably high for Cloudinary uploads.
+app.use(express.json({ limit: '15mb' }));
 
 // CORS: allow listed origins; if none provided, allow all (useful for local dev)
 app.use(
@@ -44,6 +50,9 @@ app.use('/api', apiRateLimiter);
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'cartoonify-api', time: new Date().toISOString() });
 });
+
+// Cloudinary cartoonify (JSON base64 or URL)
+app.use('/api', cartoonRoutes);
 
 app.use('/api/images', imageRoutes);
 
