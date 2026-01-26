@@ -48,7 +48,20 @@ async function uploadImage(imagePathOrDataUri) {
 
 function buildCartoonUrl(
   publicId,
-  { style = 'cloudinary', lineStrength = 45, colorReduction = 55 } = {}
+  { 
+    style = 'cloudinary', 
+    lineStrength = 45, 
+    colorReduction = 55,
+    // Pixar style refinement parameters
+    pixarSaturation = 35,        // Initial saturation boost (0-100, higher = more vibrant)
+    pixarVibrance = 25,          // Color vibrance (0-100, higher = more vivid colors)
+    pixarLineStrength = 30,      // Cartoonify line strength (0-100, lower = smoother lines)
+    pixarColorReduction = 35,    // Cartoonify color reduction (0-100, lower = more colors)
+    pixarBrightness = 10,        // Brightness adjustment (-100 to 100, positive = brighter)
+    pixarContrast = 20,          // Contrast adjustment (-100 to 100, positive = more contrast)
+    pixarSharpen = 30,           // Sharpening intensity (0-100, higher = sharper)
+    pixarFinalSaturation = 20    // Final saturation adjustment (0-100)
+  } = {}
 ) {
   ensureCloudinaryConfigured();
   const transformations = [];
@@ -57,22 +70,39 @@ function buildCartoonUrl(
   transformations.push({ effect: 'improve' });
   transformations.push({ effect: 'auto_contrast' });
 
-  // Only use Pixar-style 3D animation effect
+  // Only use Pixar-style 3D animation effect (now optimized for Ghibli-like style)
   if (style === 'pixar' || style === 'pixar_3d') {
-    // Pixar-like 3D animation style transformations
+    // Ghibli-like painterly animation style transformations
+    // Soft, watercolor-like, dreamy aesthetic inspired by Studio Ghibli
+    // Key characteristics: softer lines, pastel colors, gentle contrast, painterly texture
+    
+    // Calculate Ghibli-optimized values (softer than Pixar defaults)
+    const ghibliSaturation = Math.min(pixarSaturation, 25); // Cap at 25 for softer colors
+    const ghibliVibrance = Math.min(pixarVibrance, 18); // Lower vibrance for pastel look
+    const ghibliLineStrength = Math.max(pixarLineStrength - 10, 15); // Very soft lines (15-20 range)
+    const ghibliColorReduction = Math.max(pixarColorReduction - 10, 20); // More color detail (20-25 range)
+    const ghibliBrightness = Math.max(pixarBrightness - 3, 5); // Gentle brightness
+    const ghibliContrast = Math.max(pixarContrast - 8, 10); // Soft contrast for dreamy look
+    const ghibliSharpen = Math.max(pixarSharpen - 12, 15); // Gentle sharpening
+    const ghibliFinalSaturation = Math.min(pixarFinalSaturation, 15); // Final soft saturation
+    
     transformations.push(
-      // Enhance colors and make them vibrant like Pixar
-      { effect: 'saturation:35' },
-      { effect: 'vibrance:25' },
-      // Soft cartoonify with reduced lines for smoother 3D look
-      { effect: 'cartoonify:30:35' }, // Lower line strength, moderate color reduction for smoother look
-      // Enhance brightness and contrast for that Pixar glow
-      { effect: 'brightness:10' },
-      { effect: 'contrast:20' },
-      // Sharpen details for crisp Pixar look
-      { effect: 'sharpen:30' },
-      // Add warmth with color adjustment
-      { effect: 'saturation:20' },
+      // Soft, natural color enhancement (less vibrant than Pixar)
+      { effect: `saturation:${ghibliSaturation}` },
+      { effect: `vibrance:${ghibliVibrance}` },
+      // Very soft cartoonify with minimal lines for painterly look
+      { effect: `cartoonify:${ghibliLineStrength}:${ghibliColorReduction}` },
+      // Gentle brightness and contrast (softer than Pixar)
+      { effect: `brightness:${ghibliBrightness}` },
+      { effect: `contrast:${ghibliContrast}` },
+      // Soft blur for watercolor/painterly effect (applied before sharpening)
+      { effect: 'blur:150' }, // Soft blur for painterly texture
+      // Gentle sharpening (less aggressive than Pixar)
+      { effect: `sharpen:${ghibliSharpen}` },
+      // Add soft color warmth
+      { effect: `saturation:${ghibliFinalSaturation}` },
+      // Add slight warm tint for Ghibli's natural palette
+      { effect: 'tint:8:fff8e1' }, // Very subtle warm cream tint
       // Final polish - enhance overall quality
       { effect: 'improve' }
     );
@@ -92,8 +122,10 @@ function buildCartoonUrl(
   //   transformations.push({ effect: `cartoonify:${lineStrength}:${colorReduction}` });
   // }
 
-  // Keep detail, but keep the look subtle
-  transformations.push({ effect: 'sharpen:15' });
+  // Final sharpening is already applied in Pixar style, so only add if not Pixar
+  if (style !== 'pixar' && style !== 'pixar_3d') {
+    transformations.push({ effect: 'sharpen:15' });
+  }
 
   // Prefer best compression quality + PNG to reduce banding/JPEG artifacts in flat toon regions
   transformations.push({ quality: 'auto:best' }, { fetch_format: 'png' });

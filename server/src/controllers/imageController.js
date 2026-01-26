@@ -68,9 +68,24 @@ async function cartoonizeUpload(req, res) {
     //   return res.status(201).json(payload);
     // }
 
-    // Use Cloudinary Pixar 3D style transformations
+    // Use Cloudinary transformations optimized for Ghibli-like style
+    // Extract optional refinement parameters from request (for future customization)
+    const pixarParams = {
+      style,
+      // Ghibli-style refinement parameters (optimized for soft, painterly look)
+      // Defaults are tuned for Studio Ghibli's dreamy, watercolor aesthetic
+      pixarSaturation: req.body?.pixarSaturation || 22,        // Softer colors (was 35)
+      pixarVibrance: req.body?.pixarVibrance || 15,            // Pastel look (was 25)
+      pixarLineStrength: req.body?.pixarLineStrength || 20,    // Very soft lines (was 30)
+      pixarColorReduction: req.body?.pixarColorReduction || 25, // More color detail (was 35)
+      pixarBrightness: req.body?.pixarBrightness || 7,          // Gentle brightness (was 10)
+      pixarContrast: req.body?.pixarContrast || 12,            // Soft contrast (was 20)
+      pixarSharpen: req.body?.pixarSharpen || 18,              // Gentle sharpening (was 30)
+      pixarFinalSaturation: req.body?.pixarFinalSaturation || 12 // Soft final saturation (was 20)
+    };
+    
     const uploaded = await uploadImage(file.path);
-    const cartoonUrl = buildCartoonUrl(uploaded.public_id, { style, lineStrength: 45, colorReduction: 55 });
+    const cartoonUrl = buildCartoonUrl(uploaded.public_id, pixarParams);
 
     const payload = {
       // Back-compat: old client expects `pngUrl`
