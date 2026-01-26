@@ -11,6 +11,8 @@ export default function CartoonMaker() {
   const [publicId, setPublicId] = useState('');
   const [cartoonUrl, setCartoonUrl] = useState('');
   const [error, setError] = useState('');
+  // Always use Pixar 3D style
+  const style = 'pixar';
 
   useEffect(() => {
     if (!file) {
@@ -45,21 +47,25 @@ export default function CartoonMaker() {
 
     reader.onloadend = async () => {
       try {
+        // Use FormData for multipart upload (matches backend route)
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('style', style);
+
         const { data } = await axios.post(
-          `${API_BASE_URL}/api/cartoonify`,
-          { imagePath: reader.result, style: 'cloudinary' },
-          { headers: { 'Content-Type': 'application/json' } }
+          `${API_BASE_URL}/api/images/cartoonize`,
+          formData,
+          { 
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 120000 // 2 minutes for processing
+          }
         );
 
-        if (!data?.success) {
-          throw new Error(data?.message || 'Cartoonify failed');
-        }
-
-        // Backend may return a Cloudinary publicId (if output is Cloudinary-hosted)
+        // Backend returns pngUrl or cartoonUrl
         setPublicId(data.publicId || '');
-        setCartoonUrl(data.cartoonUrl || '');
+        setCartoonUrl(data.pngUrl || data.cartoonUrl || '');
       } catch (err) {
-        setError(err?.response?.data?.message || err?.message || 'Upload failed');
+        setError(err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Upload failed');
       } finally {
         setLoading(false);
       }

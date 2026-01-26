@@ -56,19 +56,41 @@ function buildCartoonUrl(
   // Cleanup before stylizing (helps avoid muddy/noisy areas + harsh shadows)
   transformations.push({ effect: 'improve' });
   transformations.push({ effect: 'auto_contrast' });
-  transformations.push({ effect: 'saturation:5' });
 
-  // Default behavior: Cloudinary cartoonify effect (filter-based).
-  if (style === 'cloudinary_clean') {
-    // Slightly portrait-friendlier preset (still filter-based)
+  // Only use Pixar-style 3D animation effect
+  if (style === 'pixar' || style === 'pixar_3d') {
+    // Pixar-like 3D animation style transformations
     transformations.push(
-      { effect: `cartoonify:${lineStrength}:${colorReduction}` },
+      // Enhance colors and make them vibrant like Pixar
+      { effect: 'saturation:35' },
+      { effect: 'vibrance:25' },
+      // Soft cartoonify with reduced lines for smoother 3D look
+      { effect: 'cartoonify:30:35' }, // Lower line strength, moderate color reduction for smoother look
+      // Enhance brightness and contrast for that Pixar glow
+      { effect: 'brightness:10' },
+      { effect: 'contrast:20' },
+      // Sharpen details for crisp Pixar look
+      { effect: 'sharpen:30' },
+      // Add warmth with color adjustment
       { effect: 'saturation:20' },
-      { effect: 'brightness:5' }
+      // Final polish - enhance overall quality
+      { effect: 'improve' }
     );
-  } else {
-    transformations.push({ effect: `cartoonify:${lineStrength}:${colorReduction}` });
-  }
+  } 
+  // Commented out other styles - can be enabled later if needed
+  // else if (style === 'cloudinary_clean') {
+  //   // Slightly portrait-friendlier preset (still filter-based)
+  //   transformations.push(
+  //     { effect: 'saturation:5' },
+  //     { effect: `cartoonify:${lineStrength}:${colorReduction}` },
+  //     { effect: 'saturation:20' },
+  //     { effect: 'brightness:5' }
+  //   );
+  // } else {
+  //   // Default Cloudinary cartoonify
+  //   transformations.push({ effect: 'saturation:5' });
+  //   transformations.push({ effect: `cartoonify:${lineStrength}:${colorReduction}` });
+  // }
 
   // Keep detail, but keep the look subtle
   transformations.push({ effect: 'sharpen:15' });

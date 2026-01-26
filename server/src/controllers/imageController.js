@@ -3,7 +3,7 @@ const path = require('path');
 const Image = require('../models/Image');
 const { env } = require('../config/env');
 const { uploadImage, buildCartoonUrl } = require('../services/cloudinaryService');
-const { stylizePixar3d } = require('../services/aiStylizeService');
+// const { stylizePixar3d } = require('../services/aiStylizeService'); // Commented out - AI service not used, can be enabled later
 const { logger } = require('../utils/logger');
 const { extractCloudinaryError } = require('../utils/cloudinaryError');
 
@@ -14,7 +14,8 @@ function buildProcessedUrl(processedName) {
 
 async function cartoonizeUpload(req, res) {
   const file = req.file;
-  const style = String(req.body?.style || 'cloudinary');
+  // Always use Pixar 3D style
+  const style = 'pixar';
 
   // Extra backend validation (defense in depth)
   if (!file || !file.path) {
@@ -28,43 +29,46 @@ async function cartoonizeUpload(req, res) {
   }
 
   try {
-    if (style === 'pixar_3d') {
-      const aiOut = await stylizePixar3d({
-        filePath: file.path,
-        fileMimetype: file.mimetype,
-        requestId: req.id
-      });
-      const uploaded = await uploadImage(aiOut.imageUrl || aiOut.imageDataUri);
+    // Only use Pixar 3D style with Cloudinary transformations
+    // Commented out AI-based Pixar 3D (requires external AI service) - can be enabled later if needed
+    // if (style === 'pixar_3d') {
+    //   const aiOut = await stylizePixar3d({
+    //     filePath: file.path,
+    //     fileMimetype: file.mimetype,
+    //     requestId: req.id
+    //   });
+    //   const uploaded = await uploadImage(aiOut.imageUrl || aiOut.imageDataUri);
+    //
+    //   const payload = {
+    //     // Back-compat: old client expects `pngUrl`
+    //     pngUrl: uploaded.secure_url,
+    //     cartoonUrl: uploaded.secure_url,
+    //     publicId: uploaded.public_id,
+    //     originalName: file.originalname,
+    //     provider: 'ai',
+    //     style
+    //   };
+    //
+    //   // Persist metadata if MongoDB is available; otherwise still return the URL for local testing.
+    //   try {
+    //     const doc = await Image.create({
+    //       originalName: file.originalname,
+    //       originalPath: path.relative(path.resolve(__dirname, '..', '..'), file.path),
+    //       mimetype: file.mimetype,
+    //       sizeBytes: file.size,
+    //       processedUrl: payload.pngUrl,
+    //       cloudinaryPublicId: uploaded.public_id
+    //     });
+    //
+    //     payload.imageId = doc._id;
+    //   } catch (_) {
+    //     // Ignore DB errors in local-dev no-DB mode
+    //   }
+    //
+    //   return res.status(201).json(payload);
+    // }
 
-      const payload = {
-        // Back-compat: old client expects `pngUrl`
-        pngUrl: uploaded.secure_url,
-        cartoonUrl: uploaded.secure_url,
-        publicId: uploaded.public_id,
-        originalName: file.originalname,
-        provider: 'ai',
-        style
-      };
-
-      // Persist metadata if MongoDB is available; otherwise still return the URL for local testing.
-      try {
-        const doc = await Image.create({
-          originalName: file.originalname,
-          originalPath: path.relative(path.resolve(__dirname, '..', '..'), file.path),
-          mimetype: file.mimetype,
-          sizeBytes: file.size,
-          processedUrl: payload.pngUrl,
-          cloudinaryPublicId: uploaded.public_id
-        });
-
-        payload.imageId = doc._id;
-      } catch (_) {
-        // Ignore DB errors in local-dev no-DB mode
-      }
-
-      return res.status(201).json(payload);
-    }
-
+    // Use Cloudinary Pixar 3D style transformations
     const uploaded = await uploadImage(file.path);
     const cartoonUrl = buildCartoonUrl(uploaded.public_id, { style, lineStrength: 45, colorReduction: 55 });
 
