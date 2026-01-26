@@ -8,6 +8,7 @@ export default function CartoonMaker() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [publicId, setPublicId] = useState('');
   const [cartoonUrl, setCartoonUrl] = useState('');
   const [error, setError] = useState('');
@@ -77,15 +78,56 @@ export default function CartoonMaker() {
     };
   }
 
-  function downloadResult() {
-    if (!cartoonUrl) return;
-    const a = document.createElement('a');
-    a.href = cartoonUrl;
-    a.download = 'converted-image';
-    a.rel = 'noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  async function downloadResult() {
+    if (!cartoonUrl || downloading) return;
+
+    setDownloading(true);
+    setError('');
+
+    try {
+      // Add minimum delay for better UX (ensures "Downloading..." is visible)
+      const minDelay = 800; // 800ms minimum delay
+      const startTime = Date.now();
+
+      // Fetch the image as a blob to ensure proper download
+      const response = await fetch(cartoonUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch image for download');
+      }
+
+      const blob = await response.blob();
+      
+      // Calculate remaining time to meet minimum delay
+      const elapsed = Date.now() - startTime;
+      const remainingDelay = Math.max(0, minDelay - elapsed);
+      
+      // Wait for remaining delay if needed
+      if (remainingDelay > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingDelay));
+      }
+      
+      // Create a blob URL and trigger download
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      
+      // Generate a filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      a.download = `pixar-cartoon-${timestamp}.png`;
+      a.rel = 'noreferrer';
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Clean up the blob URL
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setError(err?.message || 'Failed to download image');
+      console.error('Download error:', err);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -161,8 +203,13 @@ export default function CartoonMaker() {
           </div>
 
           <div className="cardActions">
-            <button className="btn" type="button" disabled={!cartoonUrl || loading} onClick={downloadResult}>
-              Download
+            <button 
+              className="btn" 
+              type="button" 
+              disabled={!cartoonUrl || loading || downloading} 
+              onClick={downloadResult}
+            >
+              {downloading ? 'Downloading…' : 'Download'}
             </button>
           </div>
         </section>
