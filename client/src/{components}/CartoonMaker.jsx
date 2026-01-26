@@ -1,12 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Cloudinary } from '@cloudinary/url-gen';
-import { AdvancedImage } from '@cloudinary/react';
-import { cartoonify } from '@cloudinary/url-gen/actions/effect';
 
 // In local dev, default to the API dev server if not configured via env.
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050').replace(/\/$/, '');
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
 
 export default function CartoonMaker() {
   const [file, setFile] = useState(null);
@@ -15,11 +11,6 @@ export default function CartoonMaker() {
   const [publicId, setPublicId] = useState('');
   const [cartoonUrl, setCartoonUrl] = useState('');
   const [error, setError] = useState('');
-
-  const cld = useMemo(() => {
-    if (!CLOUD_NAME) return null;
-    return new Cloudinary({ cloud: { cloudName: CLOUD_NAME } });
-  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -56,7 +47,7 @@ export default function CartoonMaker() {
       try {
         const { data } = await axios.post(
           `${API_BASE_URL}/api/cartoonify`,
-          { imagePath: reader.result },
+          { imagePath: reader.result, style: 'cloudinary' },
           { headers: { 'Content-Type': 'application/json' } }
         );
 
@@ -64,7 +55,7 @@ export default function CartoonMaker() {
           throw new Error(data?.message || 'Cartoonify failed');
         }
 
-        // Prefer using the backend-returned publicId (more reliable than parsing URL)
+        // Backend may return a Cloudinary publicId (if output is Cloudinary-hosted)
         setPublicId(data.publicId || '');
         setCartoonUrl(data.cartoonUrl || '');
       } catch (err) {
@@ -79,12 +70,6 @@ export default function CartoonMaker() {
       setError('Could not read the selected file.');
     };
   }
-
-  const myImage = useMemo(() => {
-    if (!cld || !publicId) return null;
-    // Render using SDK transformation (you can tweak these numbers)
-    return cld.image(publicId).effect(cartoonify().lineStrength(40).colorReduction(70));
-  }, [cld, publicId]);
 
   function downloadResult() {
     if (!cartoonUrl) return;
@@ -146,7 +131,7 @@ export default function CartoonMaker() {
               </div>
             </div>
 
-            {loading || myImage || cartoonUrl ? (
+            {loading || cartoonUrl ? (
               <div className="preview">
                 <div className="caption">Converted image</div>
                 <div className="imageFrame">
@@ -157,8 +142,6 @@ export default function CartoonMaker() {
                         <div>Processing…</div>
                       </div>
                     </div>
-                  ) : myImage ? (
-                    <AdvancedImage cldImg={myImage} className="frameImg" />
                   ) : (
                     <img className="frameImg" src={cartoonUrl} alt="Converted image" />
                   )}

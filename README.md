@@ -73,17 +73,21 @@ UI: `http://localhost:5173`
 
 ### Server (`server/.env`)
 
-See `server/.env.example`. Key ones:
+Copy `server/env.template` to `server/.env` (recommended) or `<repo-root>/.env`. Key ones:
 
 - **`MONGODB_URI`**: Mongo connection
 - **`PUBLIC_BASE_URL`**: base URL used to build returned PNG URLs (set this to your hosted API domain in production)
 - **`CORS_ORIGIN`**: allowed origins (React dev URL, WordPress domain)
 - **`MAX_FILE_SIZE_BYTES`**: backend file size limit
 - **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, **`CLOUDINARY_API_SECRET`**: your Cloudinary credentials (required)
+- **`AI_STYLE_API_URL`** (optional): enable `pixar_3d` style by pointing to an external image-to-image stylization API
+- **`AI_STYLE_API_KEY`** (optional): bearer token sent as `Authorization: Bearer <key>`
+- **`AI_STYLE_TIMEOUT_MS`** (optional): request timeout for the AI style API
+- **`AI_STYLE_PROMPT_PIXAR_3D`** (optional): override the default Pixar-style prompt
 
 ### Client (`client/.env`)
 
-See `client/.env.example`:
+Copy `client/env.template` to `client/.env`:
 
 - **`VITE_API_BASE_URL`**: your backend API base URL
 - **`VITE_CLOUDINARY_CLOUD_NAME`**: your Cloudinary cloud name (used by the Cloudinary React SDK to render transformations)
@@ -101,14 +105,31 @@ See `client/.env.example`:
 - `POST /api/images/cartoonize`
   - Content-Type: `multipart/form-data`
   - Field name: `image`
+  - Optional field: `style` = `cloudinary` | `cloudinary_clean` | `pixar_3d`
   - Uploads to Cloudinary and returns the result URL (kept for back-compat)
 
 ### Cartoonify (base64 or URL)
 
 - `POST /api/cartoonify`
   - Content-Type: `application/json`
-  - Body: `{ "imagePath": "<base64 data URI or remote URL>" }`
-  - Returns `{ success, cartoonUrl, publicId }`
+  - Body: `{ "imagePath": "<base64 data URI or remote URL>", "style": "cloudinary|cloudinary_clean|pixar_3d" }`
+  - Returns `{ success, cartoonUrl, publicId, style, provider }`
+
+### Pixar-style (AI) notes
+
+Cloudinary Generative AI transformations support prompts for **editing operations** (background replace/fill, remove, replace, recolor, restore), but they do **not** provide a documented prompt-based “style transfer” effect (e.g. `gen_style`) to convert a photo into a Pixar-like 3D portrait.
+
+This repo supports Pixar-style output by calling an **external AI stylization API** when `style: "pixar_3d"` is requested, then re-uploading the result to Cloudinary.
+
+The server calls `AI_STYLE_API_URL` with:
+
+- JSON body: `{ "style": "pixar_3d", "prompt": "...", "image": "<data-uri>" }`
+
+Your AI service must respond with one of:
+
+- `{ "imageUrl": "https://..." }`
+- `{ "imageBase64": "data:image/png;base64,..." }` or `{ "imageBase64": "<base64>" }`
+- OpenAI-like: `{ "data": [ { "url": "https://..." } ] }` or `{ "data": [ { "b64_json": "<base64>" } ] }`
 
 Example cURL:
 

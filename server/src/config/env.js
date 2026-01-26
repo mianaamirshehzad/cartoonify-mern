@@ -41,7 +41,14 @@ const env = {
   // Cloudinary (cartoonify)
   cloudinaryCloudName: requireEnv('CLOUDINARY_CLOUD_NAME', null),
   cloudinaryApiKey: requireEnv('CLOUDINARY_API_KEY', null),
-  cloudinaryApiSecret: requireEnv('CLOUDINARY_API_SECRET', null)
+  cloudinaryApiSecret: requireEnv('CLOUDINARY_API_SECRET', null),
+
+  // Optional external AI stylization (Pixar-style)
+  // If not set, the "pixar_3d" style will return a helpful 400/500 error.
+  aiStyleApiUrl: requireEnv('AI_STYLE_API_URL', null),
+  aiStyleApiKey: requireEnv('AI_STYLE_API_KEY', null),
+  aiStyleTimeoutMs: toInt(process.env.AI_STYLE_TIMEOUT_MS, 120_000),
+  aiStylePromptPixar3d: requireEnv('AI_STYLE_PROMPT_PIXAR_3D', null)
 };
 
 env.uploadAbsDir = path.resolve(__dirname, '..', '..', env.uploadDir);

@@ -46,16 +46,37 @@ async function uploadImage(imagePathOrDataUri) {
   return result;
 }
 
-function buildCartoonUrl(publicId, { lineStrength = 30, colorReduction = 60 } = {}) {
+function buildCartoonUrl(
+  publicId,
+  { style = 'cloudinary', lineStrength = 45, colorReduction = 55 } = {}
+) {
   ensureCloudinaryConfigured();
-  return cloudinary.url(publicId, {
-    secure: true,
-    transformation: [
+  const transformations = [];
+
+  // Cleanup before stylizing (helps avoid muddy/noisy areas + harsh shadows)
+  transformations.push({ effect: 'improve' });
+  transformations.push({ effect: 'auto_contrast' });
+  transformations.push({ effect: 'saturation:5' });
+
+  // Default behavior: Cloudinary cartoonify effect (filter-based).
+  if (style === 'cloudinary_clean') {
+    // Slightly portrait-friendlier preset (still filter-based)
+    transformations.push(
       { effect: `cartoonify:${lineStrength}:${colorReduction}` },
-      { quality: 'auto' },
-      { fetch_format: 'auto' }
-    ]
-  });
+      { effect: 'saturation:20' },
+      { effect: 'brightness:5' }
+    );
+  } else {
+    transformations.push({ effect: `cartoonify:${lineStrength}:${colorReduction}` });
+  }
+
+  // Keep detail, but keep the look subtle
+  transformations.push({ effect: 'sharpen:15' });
+
+  // Prefer best compression quality + PNG to reduce banding/JPEG artifacts in flat toon regions
+  transformations.push({ quality: 'auto:best' }, { fetch_format: 'png' });
+
+  return cloudinary.url(publicId, { secure: true, transformation: transformations });
 }
 
 module.exports = { uploadImage, buildCartoonUrl };

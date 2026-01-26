@@ -14,6 +14,8 @@ export function validateFile(file) {
 export async function uploadAndCartoonize(file) {
   const form = new FormData();
   form.append('image', file);
+  // Default to Cloudinary toon/cel-shaded mode
+  form.append('style', 'cloudinary');
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60_000);
