@@ -44,7 +44,7 @@ async function main() {
 
   server.listen(env.port, () => {
     // eslint-disable-next-line no-console
-    console.log(`API listening on ${env.publicBaseUrl} (port ${env.port})`);
+    console.log(`Server listening on ${env.publicBaseUrl} (port ${env.port})`);
   });
 }
 

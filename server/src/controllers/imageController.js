@@ -70,20 +70,36 @@ async function cartoonizeUpload(req, res) {
 
     // Use Cloudinary transformations optimized for Ghibli-like style
     // Extract optional refinement parameters from request (for future customization)
-    const pixarParams = {
-      style,
-      // Ghibli-style refinement parameters (optimized for soft, painterly look)
-      // Defaults are tuned for Studio Ghibli's dreamy, watercolor aesthetic
-      pixarSaturation: req.body?.pixarSaturation || 22,        // Softer colors (was 35)
-      pixarVibrance: req.body?.pixarVibrance || 15,            // Pastel look (was 25)
-      pixarLineStrength: req.body?.pixarLineStrength || 20,    // Very soft lines (was 30)
-      pixarColorReduction: req.body?.pixarColorReduction || 25, // More color detail (was 35)
-      pixarBrightness: req.body?.pixarBrightness || 7,          // Gentle brightness (was 10)
-      pixarContrast: req.body?.pixarContrast || 12,            // Soft contrast (was 20)
-      pixarSharpen: req.body?.pixarSharpen || 18,              // Gentle sharpening (was 30)
-      pixarFinalSaturation: req.body?.pixarFinalSaturation || 12 // Soft final saturation (was 20)
-    };
+    // const pixarParams = {
+    //   style,
+    //   // Ghibli-style refinement parameters (optimized for soft, painterly look)
+    //   // Defaults are tuned for Studio Ghibli's dreamy, watercolor aesthetic
+    //   pixarSaturation: req.body?.pixarSaturation || 22,        // Softer colors (was 35)
+    //   pixarVibrance: req.body?.pixarVibrance || 15,            // Pastel look (was 25)
+    //   pixarLineStrength: req.body?.pixarLineStrength || 20,    // Very soft lines (was 30)
+    //   pixarColorReduction: req.body?.pixarColorReduction || 25, // More color detail (was 35)
+    //   pixarBrightness: req.body?.pixarBrightness || 7,          // Gentle brightness (was 10)
+    //   pixarContrast: req.body?.pixarContrast || 12,            // Soft contrast (was 20)
+    //   pixarSharpen: req.body?.pixarSharpen || 18,              // Gentle sharpening (was 30)
+    //   pixarFinalSaturation: req.body?.pixarFinalSaturation || 12 // Soft final saturation (was 20)
+    // };
     
+    // Inside cartoonizeUpload function, update the pixarParams object:
+const pixarParams = {
+  style,
+  // 3D Pixar-style refinement (High saturation, smooth skin, bold eyes)
+  pixarSaturation: req.body?.pixarSaturation || 50,        // Boosted for "movie" look
+  pixarVibrance: req.body?.pixarVibrance || 40,            // Vibrant colors
+  pixarLineStrength: req.body?.pixarLineStrength || 15,    // Low lines (3D doesn't use heavy outlines)
+  pixarColorReduction: req.body?.pixarColorReduction || 40, 
+  pixarBrightness: req.body?.pixarBrightness || 5,          
+  pixarContrast: req.body?.pixarContrast || 15,            
+  pixarSharpen: req.body?.pixarSharpen || 25,              
+  pixarFinalSaturation: req.body?.pixarFinalSaturation || 20,
+  // ADD THIS: For skin smoothing / "plastic" 3D look
+  pixarSmooth: 40 
+};
+
     const uploaded = await uploadImage(file.path);
     const cartoonUrl = buildCartoonUrl(uploaded.public_id, pixarParams);
 
